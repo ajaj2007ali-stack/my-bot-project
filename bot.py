@@ -2,12 +2,14 @@ import telebot
 from telebot import types
 import requests
 import time
+import json
+import os as _os
 
-# 🌐 بيانات الـ API الخاصة بموقع فولو عراق (foloiq)
+# 🌐 بيانات الـ API
 API_URL = "https://foloiq.com/api/v2"
 API_KEY = "5d97af2902dacc9a4e2d2bbd6885b99c"
 
-# 📢 معرف قناة الاشتراك الإجباري
+# 📢 قناة الاشتراك الإجباري
 CHANNEL_USERNAME = "@Sultan_Follow"
 
 # 📸 خدمات إنستغرام
@@ -36,7 +38,7 @@ TIKTOK_SERVICES = {
     "🎵 | مشاهدات بث | 1000 بـ 20,000 نقطة": {"id": 8735, "points": 20000},
     "🎵 | مشاهدات بث عربي | 1000 بـ 30,000 نقطة": {"id": 8736, "points": 30000},
     "🎵 | متابعين حقيقي 15 يوم | 1000 بـ 60,000 نقطة": {"id": 8103, "points": 60000},
-    "🎵 | متابعين حسابات مميزة | 1000 بـ 62,000 نقطة": {"id": 7963, "points": 62000},
+    "🎵 | متابعين حسابات مميزة | 1000 بـ 7963 نقطة": {"id": 7963, "points": 62000},
     "🎵 | مشاركات بدون ضمان | 1000 بـ 15,000 نقطة": {"id": 8091, "points": 15000},
     "🎵 | مشاركات ضمان | 1000 بـ 16,000 نقطة": {"id": 8092, "points": 16000},
     "🎵 | حفظ بدون ضمان | 1000 بـ 500 نقطة": {"id": 8363, "points": 500},
@@ -115,33 +117,60 @@ ALL_SERVICES = {
 }
 SERVICES_BY_ID = {data["id"]: {"name": name, "points": data["points"]} for name, data in ALL_SERVICES.items()}
 
-# 💾 قواعد البيانات الوهمية لحفظ البيانات
-USER_BALANCES = {}      # حفظ الرصيد
-USER_DAILY_GIFT = {}    # حفظ توقيت الهدية اليومية
-REFERRAL_USED = {}      # حفظ من أحال كل مستخدم (user_id -> referrer_id)
-REFERRED_USERS = {}     # حفظ قائمة المُحالين لكل مشارك (referrer_id -> set of user_ids)
+# 💾 ملف حفظ البيانات
+DATA_FILE = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "bot_data.json")
+
+def load_data():
+    global USER_BALANCES, USER_DAILY_GIFT, REFERRAL_USED, REFERRED_USERS
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        USER_BALANCES   = {int(k): v for k, v in data.get("balances", {}).items()}
+        USER_DAILY_GIFT = {int(k): v for k, v in data.get("daily_gift", {}).items()}
+        REFERRAL_USED   = {int(k): int(v) for k, v in data.get("referral_used", {}).items()}
+        REFERRED_USERS  = {int(k): set(map(int, v)) for k, v in data.get("referred_users", {}).items()}
+    except Exception:
+        USER_BALANCES   = {}
+        USER_DAILY_GIFT = {}
+        REFERRAL_USED   = {}
+        REFERRED_USERS  = {}
+
+def save_data():
+    data = {
+        "balances":       {str(k): v for k, v in USER_BALANCES.items()},
+        "daily_gift":     {str(k): v for k, v in USER_DAILY_GIFT.items()},
+        "referral_used":  {str(k): str(v) for k, v in REFERRAL_USED.items()},
+        "referred_users": {str(k): list(v) for k, v in REFERRED_USERS.items()}
+    }
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+# تحميل البيانات عند بدء البوت
+USER_BALANCES   = {}
+USER_DAILY_GIFT = {}
+REFERRAL_USED   = {}
+REFERRED_USERS  = {}
+load_data()
 
 BOT_TOKEN = "8804286947:AAEydiGWGxA7ylGtCs7K5BmDImPfUI9dmww"
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# --- دالة فحص الاشتراك الإجباري الصارمة ---
+# --- فحص الاشتراك ---
 def check_is_subscribed(user_id):
     try:
         member = bot.get_chat_member(CHANNEL_USERNAME, user_id)
-        if member.status in ['member', 'administrator', 'creator']:
-            return True
-        return False
+        return member.status in ['member', 'administrator', 'creator']
     except Exception:
         return False
 
-# --- واجهة الاشتراك الإجباري المخصصة ---
+# --- واجهة الاشتراك الإجباري ---
 def force_sub_menu():
     markup = types.InlineKeyboardMarkup()
     markup.row(types.InlineKeyboardButton("اضغط هنا للاشتراك بالقناة 📢", url="https://t.me/Sultan_Follow"))
     markup.row(types.InlineKeyboardButton("تم الاشتراك ✅", callback_data="verify_subscription"))
     return markup
 
-# --- دالة لتوليد نص الترحيب الرئيسي المحدث بيوزر البوت الحالي ---
+# رسالة ترحيب واحدة تحتوي على الأزرار مباشرة
 def get_welcome_text(user_id):
     balance = USER_BALANCES.get(user_id, 0)
     return (
@@ -152,7 +181,7 @@ def get_welcome_text(user_id):
         f"💎 | عدد نقاطك : {balance} نقطة"
     )
 
-# --- 1. القائمة الرئيسية الشفافة (Inline) ---
+# --- القائمة الرئيسية ---
 def main_inline_menu():
     markup = types.InlineKeyboardMarkup()
     markup.row(types.InlineKeyboardButton("🛒 الخدمات", callback_data="main_services"))
@@ -175,7 +204,7 @@ def main_inline_menu():
     )
     return markup
 
-# --- 2. واجهة اختيار التطبيقات والبرامج ---
+# --- واجهة الخدمات ---
 def services_inline_menu():
     markup = types.InlineKeyboardMarkup()
     markup.row(types.InlineKeyboardButton("الخدمات المجانية 🎁", callback_data="btn_under_dev"))
@@ -200,10 +229,10 @@ def services_inline_menu():
         types.InlineKeyboardButton("سبوتي فاي 🎧", callback_data="spotify_menu")
     )
     markup.row(types.InlineKeyboardButton("قسم الإعلانات 📢", callback_data="btn_under_dev"))
-    markup.row(types.InlineKeyboardButton("رجوع ◀️", callback_data="back_to_main"))
+    markup.row(types.InlineKeyboardButton("◀️ رجوع للقائمة الرئيسية", callback_data="back_to_main"))
     return markup
 
-# --- قوائم الخدمات الفرعية للمنصات ---
+# --- قوائم الخدمات الفرعية ---
 def instagram_inline_menu():
     markup = types.InlineKeyboardMarkup()
     for name, data in INSTAGRAM_SERVICES.items():
@@ -267,17 +296,21 @@ def youtube_inline_menu():
     markup.add(types.InlineKeyboardButton("🔙 رجوع للمنصات", callback_data="platforms_menu"))
     return markup
 
-# --- 3. معالجة أمر البداية /start مع دعم نظام الإحالة تلقائياً وحذف أزرار الكيبورد القديمة ---
+def send_welcome(chat_id, user_id):
+    bot.send_message(chat_id, get_welcome_text(user_id), reply_markup=main_inline_menu())
+
+def edit_to_welcome(chat_id, message_id, user_id):
+    bot.edit_message_text(get_welcome_text(user_id), chat_id, message_id, reply_markup=main_inline_menu())
+
+# --- /start ---
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.from_user.id
     text_args = message.text.split()
 
-    # كود تنظيف وحذف أزرار الكيبورد القديمة الثابتة تلقائياً من شاشة المستخدم
     clean_msg = bot.send_message(message.chat.id, "جاري فتح لوحة التحكم...", reply_markup=types.ReplyKeyboardRemove())
     bot.delete_message(message.chat.id, clean_msg.message_id)
 
-    # التحقق من الاشتراك الإجباري أولاً
     if not check_is_subscribed(user_id):
         bot.send_message(
             message.chat.id,
@@ -300,6 +333,7 @@ def start(message):
                     REFERRED_USERS[referrer_id] = set()
                 REFERRED_USERS[referrer_id].add(user_id)
                 USER_BALANCES[referrer_id] = USER_BALANCES.get(referrer_id, 0) + 200
+                save_data()
                 try:
                     bot.send_message(referrer_id, "🎯 دخل مستخدم جديد للبوت عن طريق رابط الإحالة الخاص بك!\n➕ تم إضافة 200 نقطة إلى حسابك.")
                 except Exception:
@@ -307,63 +341,85 @@ def start(message):
         except ValueError:
             pass
 
-    bot.send_message(message.chat.id, get_welcome_text(user_id))
-    bot.send_message(message.chat.id, "📋 القائمة الرئيسية :", reply_markup=main_inline_menu())
+    send_welcome(message.chat.id, user_id)
 
-# --- 🛠 ميزة شحن وتحويل النقاط الحصرية للمالك فقط ---
+# --- شحن نقاط للمالك ---
 @bot.message_handler(commands=['add'])
 def add_points_admin(message):
     username = message.from_user.username
-
-    # فحص حساب المالك عبر اليوزر المعتمد فقط لضمان الخصوصية والأمان
     if username == 'xc_1h':
         try:
             args = message.text.split()
             if len(args) == 3:
                 target_id = int(args[1])
                 points_to_add = int(args[2])
-
                 if target_id not in USER_BALANCES:
                     USER_BALANCES[target_id] = 0
-
                 USER_BALANCES[target_id] += points_to_add
-                bot.send_message(message.chat.id, f"✅ تم تعديل النقاط بنجاح للمستخدم {target_id} بمقدار: ({points_to_add}) نقطة.", parse_mode="Markdown")
-
+                save_data()
+                bot.send_message(message.chat.id, f"✅ تم تعديل النقاط بنجاح للمستخدم {target_id} بمقدار: ({points_to_add}) نقطة.")
                 try:
                     bot.send_message(target_id, f"💰 تم تحديث رصيد نقاطك من قبل الإدارة بمقدار: {points_to_add} نقطة! 🎉")
                 except Exception:
                     pass
             else:
-                bot.send_message(message.chat.id, "❌ الصيغة خاطئة! استخدم الأمر هكذا:\n/add [الآيدي] [عدد النقاط]", parse_mode="Markdown")
+                bot.send_message(message.chat.id, "❌ الصيغة خاطئة! استخدم:\n/add [الآيدي] [عدد النقاط]")
         except ValueError:
             bot.send_message(message.chat.id, "❌ خطأ! تأكد من كتابة الآيدي والنقاط بالأرقام فقط.")
     else:
-        bot.send_message(message.chat.id, "❌ هذا الأمر مخصص للمالك والأدمن فقط!")
+        bot.send_message(message.chat.id, "❌ هذا الأمر مخصص للمالك فقط!")
 
-# --- 4. التحكم بالضغطات والتحديث بداخل الرسالة الشفافة ---
+# --- أمر أعلى 10 مشاركين ---
+@bot.message_handler(func=lambda m: m.text and m.text.strip() in [
+    '/top_referrals', 'اكثر مشاركين رابط الاحالة', 'أكثر مشاركين رابط الإحالة',
+    'اكثر مشاركين رابط الإحالة', 'أكثر مشاركين رابط الاحالة', '/اكثر مشاركين'
+])
+def top_referrals(message):
+    if not REFERRED_USERS:
+        bot.send_message(message.chat.id, "📊 لا يوجد مشاركين بعد.")
+        return
+
+    sorted_referrers = sorted(
+        REFERRED_USERS.items(),
+        key=lambda x: len(x[1]),
+        reverse=True
+    )[:10]
+
+    total = sum(len(v) for v in REFERRED_USERS.values())
+    text = f"🏆 أعلى 10 مشاركين لرابط الإحالة:\n"
+    text += f"👥 إجمالي المشاركات: {total}\n"
+    text += "━━━━━━━━━━━━━━━━\n"
+    medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
+    for i, (uid, referred_set) in enumerate(sorted_referrers):
+        count = len(referred_set)
+        word = "مشاركة" if count == 1 else "مشاركات"
+        text += f"{medals[i]} الآيدي: `{uid}`\n"
+        text += f"     ↳ عدد المشاركات: {count} {word}\n"
+    text += "━━━━━━━━━━━━━━━━"
+
+    bot.send_message(message.chat.id, text, parse_mode="Markdown")
+
+# --- معالجة الأزرار ---
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callbacks(call):
     user_id = call.from_user.id
     chat_id = call.message.chat.id
     message_id = call.message.message_id
 
-    # معالجة ضغطة التحقق من الاشتراك الإجباري بالقناة
     if call.data == "verify_subscription":
         if check_is_subscribed(user_id):
             bot.delete_message(chat_id, message_id)
             if user_id not in USER_BALANCES:
                 USER_BALANCES[user_id] = 0
-            bot.send_message(chat_id, get_welcome_text(user_id))
-            bot.send_message(chat_id, "📋 القائمة الرئيسية :", reply_markup=main_inline_menu())
+            send_welcome(chat_id, user_id)
         else:
-            bot.answer_callback_query(call.id, "❌ عزيزي، لم تشترك في القناة بعد! يرجى الانضمام أولاً.", show_alert=True)
+            bot.answer_callback_query(call.id, "❌ عزيزي، لم تشترك في القناة بعد!", show_alert=True)
         return
 
-    # فحص القناة لجميع الأزرار والعمليات اللاحقة لضمان بقاء المستخدم بداخل القناة
     if not check_is_subscribed(user_id):
-        bot.answer_callback_query(call.id, "⚠️ يجب عليك البقاء مشتركاً بالقناة لاستخدام البوت!", show_alert=True)
+        bot.answer_callback_query(call.id, "⚠️ يجب عليك البقاء مشتركاً بالقناة!", show_alert=True)
         bot.edit_message_text(
-            f"⚠️ <b>يجب عليك الاشتراك في قناة البوت الرسمية أولاً:</b>\n\nالقناة الحالية: {CHANNEL_USERNAME}",
+            f"⚠️ <b>يجب عليك الاشتراك في قناة البوت الرسمية أولاً:</b>\n\nالقناة: {CHANNEL_USERNAME}",
             chat_id, message_id, reply_markup=force_sub_menu(), parse_mode="HTML"
         )
         return
@@ -372,14 +428,16 @@ def handle_callbacks(call):
         USER_BALANCES[user_id] = 0
 
     if call.data == "back_to_main":
-        bot.edit_message_text(get_welcome_text(user_id), chat_id, message_id, reply_markup=main_inline_menu())
+        edit_to_welcome(chat_id, message_id, user_id)
 
     elif call.data == "main_services" or call.data == "platforms_menu":
-        services_text = "🔴 اهلاً بك في قسم الخدمات\n• اختر الخدمة التي تريدها 👇"
-        bot.edit_message_text(services_text, chat_id, message_id, reply_markup=services_inline_menu())
+        bot.edit_message_text(
+            "🛒 اهلاً بك في قسم الخدمات\n• اختر المنصة التي تريدها 👇",
+            chat_id, message_id, reply_markup=services_inline_menu()
+        )
 
     elif call.data == "main_account":
-        account_text = f"👤 حسابك الشخصي:\n\n🆔 الآيدي: {user_id}\n💎 رصيد نقاطك: {USER_BALANCES[user_id]} نقطة"
+        account_text = f"👤 حسابك الشخصي:\n\n🆔 الآيدي: {user_id}\n💎 رصيد نقاطك: {USER_BALANCES.get(user_id, 0)} نقطة"
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("🔙 رجوع للقائمة الرئيسية", callback_data="back_to_main"))
         bot.edit_message_text(account_text, chat_id, message_id, reply_markup=markup)
@@ -390,23 +448,23 @@ def handle_callbacks(call):
     elif call.data == "charge_points_menu":
         charge_text = (
             "🔹 | <b>اسعار نقاط بوت السلطان للدعم</b> 🔹\n\n"
-            "- 1$ = 10,000 نقطة 💎\n"
-            "- 2$ = 20,000 نقطة 💎\n"
-            "- 3$ = 30,000 نقطة 💎\n"
-            "- 4$ = 40,000 نقطة 💎\n"
-            "- 5$ = 50,000 نقطة 💎\n"
-            "- 10$ = 100,000 نقطة 💎\n"
-            "- 20$ = 200,000 نقطة 💎\n"
-            "- 50$ = 50,0000 نقطة 💎\n"
-            "- 150$ = 1,500,000 نقطة 💎\n\n"
+            "- 1$ = 10000 نقطة 💎\n"
+            "- 2$ = 20000 نقطة 💎\n"
+            "- 3$ = 30000 نقطة 💎\n"
+            "- 4$ = 40000 نقطة 💎\n"
+            "- 5$ = 50000 نقطة 💎\n"
+            "- 10$ = 100000 نقطة 💎\n"
+            "- 20$ = 200000 نقطة 💎\n"
+            "- 50$ = 500000 نقطة 💎\n"
+            "- 150$ = 1500000 نقطة 💎\n"
             "• يمكنك شحن حتى 100M نقطة 🤩\n"
             "-----------------------------\n"
-            "• طرق الدفع : ↫ اسيا، زين كاش، زين العراق، ماستر كارد، ايتونز أمريكي \n"
+            "• طرق الدفع: اسيا، زين كاش، زين العراق، ماستر كارد، ايتونز أمريكي\n"
             "( BTC | USDT $ TON )\n"
             "-----------------------------\n\n"
-            "• للشحن يرجى التواصل مباشرة مع المالك عبر المعرف التالي:\n"
+            "• للشحن يرجى التواصل مباشرة مع المالك:\n"
             "👉 @xc_1h\n\n"
-            f"• قم بنسخ آيديك هذا وأرسله له ليتم الشحن لك فوراً:\n"
+            f"• قم بنسخ آيديك وأرسله له:\n"
             f"<code>{user_id}</code>"
         )
         markup = types.InlineKeyboardMarkup()
@@ -436,7 +494,7 @@ def handle_callbacks(call):
             f"🔗 | رابط الإحالة الخاص بك:\n\n"
             f"{ref_link}\n\n"
             f"• انسخ الرابط وقم بمشاركته مع أصدقائك وفي المجموعات.\n"
-            f"• كل شخص يقوم بالدخول للبوت والضغط على (ابدأ / start) عبر رابطك لأول مرة، ستحصل تلقائياً على 200 نقطة! 🎉"
+            f"• كل شخص يدخل للبوت عبر رابطك لأول مرة، ستحصل تلقائياً على 200 نقطة! 🎉"
         )
         markup = types.InlineKeyboardMarkup()
         markup.row(types.InlineKeyboardButton("🔙 رجوع لقسم التجميع", callback_data="collect_menu"))
@@ -449,73 +507,65 @@ def handle_callbacks(call):
         if current_time - last_claim >= 86400:
             USER_DAILY_GIFT[user_id] = current_time
             USER_BALANCES[user_id] = USER_BALANCES.get(user_id, 0) + 100
+            save_data()
             bot.answer_callback_query(call.id, "🎁 مبروك! حصلت على 100 نقطة مجانية كهدية يومية.", show_alert=True)
-            bot.edit_message_text(get_welcome_text(user_id), chat_id, message_id, reply_markup=main_inline_menu())
         else:
             remaining_time = int(86400 - (current_time - last_claim))
             hours = remaining_time // 3600
             minutes = (remaining_time % 3600) // 60
-            bot.answer_callback_query(call.id, f"❌ لقد استلمت هديتك اليومية سابقاً!\nيرجى المحاولة بعد: {hours} ساعة و {minutes} دقيقة.", show_alert=True)
+            bot.answer_callback_query(call.id, f"❌ لقد استلمت هديتك اليومية!\nيرجى المحاولة بعد: {hours} ساعة و {minutes} دقيقة.", show_alert=True)
+        
+        edit_to_welcome(chat_id, message_id, user_id)
 
-    # --- توجيه أزرار المنصات الأخرى ---
     elif call.data == "insta_menu":
-        bot.edit_message_text("📊 قسم : انستغرام \n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=instagram_inline_menu())
+        bot.edit_message_text("📸 قسم : انستغرام\n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=instagram_inline_menu())
     elif call.data == "tiktok_menu":
-        bot.edit_message_text("📊 قسم : تيك توك \n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=tiktok_inline_menu())
+        bot.edit_message_text("🎵 قسم : تيك توك\n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=tiktok_inline_menu())
     elif call.data == "tele_menu":
-        bot.edit_message_text("📊 قسم : تلجرام \n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=telegram_inline_menu())
+        bot.edit_message_text("✈️ قسم : تلجرام\n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=telegram_inline_menu())
     elif call.data == "fb_menu":
-        bot.edit_message_text("📊 قسم : فيس بوك \n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=facebook_inline_menu())
+        bot.edit_message_text("📘 قسم : فيس بوك\n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=facebook_inline_menu())
     elif call.data == "twitter_menu":
-        bot.edit_message_text("📊 قسم : تويتر \n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=twitter_inline_menu())
+        bot.edit_message_text("✖️ قسم : تويتر\n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=twitter_inline_menu())
     elif call.data == "threads_menu":
-        bot.edit_message_text("📊 قسم : ثريدز \n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=threads_inline_menu())
+        bot.edit_message_text("🧵 قسم : ثريدز\n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=threads_inline_menu())
     elif call.data == "spotify_menu":
-        bot.edit_message_text("📊 قسم : سبوتي فاي \n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=spotify_inline_menu())
+        bot.edit_message_text("🎧 قسم : سبوتي فاي\n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=spotify_inline_menu())
     elif call.data == "kick_menu":
-        bot.edit_message_text("📊 قسم : كيك \n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=kick_inline_menu())
+        bot.edit_message_text("🟢 قسم : كيك\n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=kick_inline_menu())
     elif call.data == "yt_menu":
-        bot.edit_message_text("📊 قسم : يوتيوب \n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=youtube_inline_menu())
+        bot.edit_message_text("🔴 قسم : يوتيوب\n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=youtube_inline_menu())
 
     elif call.data.startswith("ser_"):
         service_id = int(call.data.split("_")[1])
         service_info = SERVICES_BY_ID.get(service_id)
-
         if service_info:
             service_name = service_info["name"]
             bot.delete_message(chat_id, message_id)
             msg = bot.send_message(chat_id, f"🔗 أرسل الرابط المطلوب لخدمة:\n[{service_name}]:")
             bot.register_next_step_handler(msg, process_link, service_id)
 
-# --- دالة معالجة فحص الطلب عبر الاتصال بالموقع ---
+# --- فحص الطلب ---
 def process_check_order(message):
     user_id = message.from_user.id
     order_id = message.text
 
     if order_id.startswith("/"):
         bot.send_message(message.chat.id, "تم إلغاء عملية الفحص.")
-        bot.send_message(message.chat.id, get_welcome_text(user_id))
-        bot.send_message(message.chat.id, "📋 القائمة الرئيسية :", reply_markup=main_inline_menu())
+        send_welcome(message.chat.id, user_id)
         return
 
     if not order_id.isdigit():
         bot.send_message(message.chat.id, "❌ خطأ! رقم الطلب يجب أن يتكون من أرقام فقط.")
-        bot.send_message(message.chat.id, get_welcome_text(user_id))
-        bot.send_message(message.chat.id, "📋 القائمة الرئيسية :", reply_markup=main_inline_menu())
+        send_welcome(message.chat.id, user_id)
         return
 
     bot.send_message(message.chat.id, "⏳ جاري جلب حالة الطلب من الموقع...")
 
-    api_data = {
-        "key": API_KEY,
-        "action": "status",
-        "order": int(order_id)
-    }
-
+    api_data = {"key": API_KEY, "action": "status", "order": int(order_id)}
     try:
         response = requests.post(API_URL, data=api_data, timeout=10)
         result = response.json()
-
         if "status" in result:
             status_translations = {
                 "Pending": "قيد الانتظار ⏳",
@@ -525,91 +575,71 @@ def process_check_order(message):
                 "Canceled": "ملغي من الموقع ❌",
                 "Processing": "جاري المعالجة 🔄"
             }
-            status_en = result.get("status", "Unknown")
-            status_ar = status_translations.get(status_en, status_en)
-            remains = result.get("remains", "0")
-            start_count = result.get("start_count", "0")
-
+            status_ar = status_translations.get(result.get("status", ""), result.get("status", ""))
             info_text = (
                 f"🔍 | تفاصيل حالة طلبك رقم: {order_id}\n\n"
-                f"📊 حالة الطلب الحالية: {status_ar}\n"
-                f"📈 العدد البدائي للمنشور: {start_count}\n"
-                f"🔢 العدد المتبقي لإكمال الرشق: {remains}"
+                f"📊 حالة الطلب: {status_ar}\n"
+                f"📈 العدد البدائي: {result.get('start_count', '0')}\n"
+                f"🔢 المتبقي: {result.get('remains', '0')}"
             )
             bot.send_message(message.chat.id, info_text)
         else:
-            bot.send_message(message.chat.id, f"❌ لم يتم العثور على أي بيانات لهذا الطلب.\nالسبب: {result.get('error', 'رقم الطلب غير صحيح')}")
+            bot.send_message(message.chat.id, f"❌ لم يتم العثور على بيانات لهذا الطلب.\nالسبب: {result.get('error', 'رقم الطلب غير صحيح')}")
     except Exception:
-        bot.send_message(message.chat.id, "❌ فشل الاتصال بالسيرفر، يرجى إعادة المحاولة لاحقاً.")
+        bot.send_message(message.chat.id, "❌ فشل الاتصال بالسيرفر، يرجى المحاولة لاحقاً.")
 
-    bot.send_message(message.chat.id, get_welcome_text(user_id))
-    bot.send_message(message.chat.id, "📋 القائمة الرئيسية :", reply_markup=main_inline_menu())
+    send_welcome(message.chat.id, user_id)
 
-# --- استلام الرابط للخدمات ---
+# --- استلام الرابط ---
 def process_link(message, service_id):
     link = message.text
     if link.startswith("/"):
-        bot.send_message(message.chat.id, "تم إلغاء الطلب المفتوح.")
-        bot.send_message(message.chat.id, get_welcome_text(message.from_user.id))
-        bot.send_message(message.chat.id, "📋 القائمة الرئيسية :", reply_markup=main_inline_menu())
+        bot.send_message(message.chat.id, "تم إلغاء الطلب.")
+        send_welcome(message.chat.id, message.from_user.id)
         return
     msg = bot.send_message(message.chat.id, "🔢 أرسل العدد المطلوب (مثال: 1000):")
     bot.register_next_step_handler(msg, process_quantity, service_id, link)
 
-# --- استلام العدد وإرسال الطلب للسيرفر ---
+# --- استلام العدد وإرسال الطلب ---
 def process_quantity(message, service_id, link):
     user_id = message.from_user.id
     quantity = message.text
 
-    if quantity.startswith("/"):
-        bot.send_message(message.chat.id, "تم إلغاء الطلب المفتوح.")
-        bot.send_message(message.chat.id, get_welcome_text(user_id))
-        bot.send_message(message.chat.id, "📋 القائمة الرئيسية :", reply_markup=main_inline_menu())
-        return
-
     if not quantity.isdigit():
         bot.send_message(message.chat.id, "❌ خطأ! يجب إرسال العدد كأرقام فقط.")
-        bot.send_message(message.chat.id, get_welcome_text(user_id))
-        bot.send_message(message.chat.id, "📋 القائمة الرئيسية :", reply_markup=main_inline_menu())
+        send_welcome(message.chat.id, user_id)
         return
 
     qty = int(quantity)
     service_info = SERVICES_BY_ID[service_id]
-    points_per_1000 = service_info["points"]
-    cost = int((qty / 1000) * points_per_1000)
+    cost = int((qty / 1000) * service_info["points"])
+    balance = USER_BALANCES.get(user_id, 0)
 
-    if USER_BALANCES[user_id] < cost:
-        bot.send_message(message.chat.id, f"❌ عذراً، نقاطك غير كافية لطلب هذه الخدمة!\n💰 التكلفة: {cost} نقطة.")
-        bot.send_message(message.chat.id, get_welcome_text(user_id))
-        bot.send_message(message.chat.id, "📋 القائمة الرئيسية :", reply_markup=main_inline_menu())
+    if balance < cost:
+        bot.send_message(message.chat.id, f"❌ عذراً، نقاطك غير كافية!\n💰 التكلفة: {cost} نقطة\n💎 رصيدك: {balance} نقطة")
+        send_welcome(message.chat.id, user_id)
         return
 
-    USER_BALANCES[user_id] -= cost
-    bot.send_message(message.chat.id, f"⏳ جاري معالجة طلبك وإرساله للسيرفر...")
+    USER_BALANCES[user_id] = balance - cost
+    save_data()
+    bot.send_message(message.chat.id, "⏳ جاري معالجة طلبك وإرساله للسيرفر...")
 
-    api_data = {
-        "key": API_KEY,
-        "action": "add",
-        "service": service_id,
-        "link": link,
-        "quantity": qty
-    }
-
+    api_data = {"key": API_KEY, "action": "add", "service": service_id, "link": link, "quantity": qty}
     try:
         response = requests.post(API_URL, data=api_data, timeout=10)
         result = response.json()
-
         if "order" in result:
-            bot.send_message(message.chat.id, f"✅ تم إرسال طلبك بنجاح للموقع!\n🆔 رقم الطلب: {result['order']}\n📉 المخصوم: {cost} نقطة")
+            bot.send_message(message.chat.id, f"✅ تم إرسال طلبك بنجاح!\n🆔 رقم الطلب: {result['order']}\n📉 المخصوم: {cost} نقطة")
         else:
             USER_BALANCES[user_id] += cost
-            bot.send_message(message.chat.id, f"❌ رفض الموقع الطلب بسبب:\n {result.get('error', 'خطأ غير معروف')}\n🔄 تم إعادة نقاطك.")
+            save_data()
+            bot.send_message(message.chat.id, f"❌ رفض الموقع الطلب:\n{result.get('error', 'خطأ غير معروف')}\n🔄 تم إعادة نقاطك.")
     except Exception:
         USER_BALANCES[user_id] += cost
-        bot.send_message(message.chat.id, f"❌ فشل الاتصال بالموقع. تم إعادة نقاطك لحسابك.")
+        save_data()
+        bot.send_message(message.chat.id, "❌ فشل الاتصال بالموقع. تم إعادة نقاطك.")
 
-    bot.send_message(message.chat.id, get_welcome_text(user_id))
-    bot.send_message(message.chat.id, "📋 القائمة الرئيسية :", reply_markup=main_inline_menu())
+    send_welcome(message.chat.id, user_id)
 
-print("البوت يعمل الآن بنظام اشتراك إجباري صارم ومغلق لقناة @Sultan_Follow...")
+print("البوت يعمل الآن...")
 bot.polling(none_stop=True)
