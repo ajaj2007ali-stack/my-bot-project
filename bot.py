@@ -135,7 +135,6 @@ GIFT_CODES = {
     "fgj": {"points": 5000, "max_uses": 5, "used_by": []},
 }
 
-# [مُصلح] تم تصحيح طريقة الإعلان عن الدالة بإضافة def
 def load_data():
     global USER_BALANCES, USER_DAILY_GIFT, REFERRAL_USED, REFERRED_USERS
     try:
@@ -367,10 +366,12 @@ def start(message):
                 if referrer_id not in REFERRED_USERS:
                     REFERRED_USERS[referrer_id] = set()
                 REFERRED_USERS[referrer_id].add(user_id)
-                USER_BALANCES[referrer_id] = USER_BALANCES.get(referrer_id, 0) + 200
+                # 🛠️ هنا تم التعديل إلى 1000 نقطة
+                USER_BALANCES[referrer_id] = USER_BALANCES.get(referrer_id, 0) + 1000
                 save_data()
                 try:
-                    bot.send_message(referrer_id, "🎯 دخل مستخدم جديد للبوت عن طريق رابط الإحالة الخاص بك!\n➕ تم إضافة 200 نقطة إلى حسابك.")
+                    # 🛠️ هنا تم تعديل رسالة الإشعار لتصبح 1000 نقطة
+                    bot.send_message(referrer_id, "🎯 دخل مستخدم جديد للبوت عن طريق رابط الإحالة الخاص بك!\n➕ تم إضافة 1000 نقطة إلى حسابك.")
                 except Exception:
                     pass
         except ValueError:
@@ -621,7 +622,6 @@ def process_gift_code(message):
 
     remaining = code_data["max_uses"] - len(GIFT_CODES[code]["used_by"])
     
-    # [مُصلح] تم استخدام علامات الاقتباس الثلاثية لمنع حدوث خطأ برمجي عند إرسال النص المتعدد الأسطر
     bot.send_message(message.chat.id, f"""✅ تم تفعيل الكود بنجاح!
 💎 حصلت على {points} نقطة!
 🔢 المتبقي من استخدامات الكود: {remaining}""")
