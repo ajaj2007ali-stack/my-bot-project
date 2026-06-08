@@ -100,7 +100,7 @@ KICK_SERVICES = {
 
 # 🔴 خدمات يوتيوب
 YOUTUBE_SERVICES = {
-"🔴 | اشتراك بريميوم مدى الحياة | 1000 بـ 20,000 نقطة": {"id": 8373, "points": 20000},
+"🔴 | اشتрак بريميوم مدى الحياة | 1000 بـ 20,000 نقطة": {"id": 8373, "points": 20000},
 "🔴 | مشتركين يوتيوب حقيقي ضمان مدى الحياة | 1000 بـ 18,000 نقطة": {"id": 8750, "points": 18000},
 "🔴 | مشاهدات حقيقية ضمان مدى الحياة | 1000 بـ 16,000 نقطة": {"id": 8855, "points": 16000},
 "🔴 | لايكات + تعليقات ضمان 90 يوم | 1000 بـ 6,000 نقطة": {"id": 6163, "points": 6000},
@@ -120,7 +120,7 @@ SERVICES_BY_ID = {data["id"]: {"name": name, "points": data["points"]} for name,
 import os as _os
 DATA_FILE = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "bot_data.json")
 
-def # 🎟️ أكواد النقاط - كل كود يشتغل لـ 5 أشخاص فقط
+# 🎟️ أكواد النقاط - كل كود يشتغل لـ 5 أشخاص فقط
 GIFT_CODES = {
     "p.m": {"points": 5000, "max_uses": 5, "used_by": []},
     "pl0": {"points": 5000, "max_uses": 5, "used_by": []},
@@ -135,7 +135,8 @@ GIFT_CODES = {
     "fgj": {"points": 5000, "max_uses": 5, "used_by": []},
 }
 
-load_data():
+# تم تصليح الخطأ هنا بإضافة def
+def load_data():
     global USER_BALANCES, USER_DAILY_GIFT, REFERRAL_USED, REFERRED_USERS
     try:
         with open(DATA_FILE, "r", encoding="utf-8") as f:
@@ -627,7 +628,11 @@ def process_gift_code(message):
     save_data()
 
     remaining = code_data["max_uses"] - len(GIFT_CODES[code]["used_by"])
-    bot.send_message(message.chat.id, f"✅ تم تفعيل الكود بنجاح!\n💎 حصلت على {points} نقطة!\n🔢 المتبقي من استخدامات الكود: {remaining}")
+    
+    # تم التصليح هنا باستخدام علامات الاقتباس الثلاثية لمنع الـ SyntaxError
+    bot.send_message(message.chat.id, f"""✅ تم تفعيل الكود بنجاح!
+💎 حصلت على {points} نقطة!
+🔢 المتبقي من استخدامات الكود: {remaining}""")
     send_welcome(message.chat.id, user_id)
 
 # --- فحص الطلب ---
