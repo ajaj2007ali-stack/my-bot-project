@@ -135,7 +135,7 @@ GIFT_CODES = {
     "fgj": {"points": 5000, "max_uses": 5, "used_by": []},
 }
 
-# تم تصليح الخطأ هنا بإضافة def
+# تم تصليح الدالة هنا عبر إضافة كلمة def التعريفية
 def load_data():
     global USER_BALANCES, USER_DAILY_GIFT, REFERRAL_USED, REFERRED_USERS
     try:
@@ -202,7 +202,7 @@ def force_sub_menu():
     markup.row(types.InlineKeyboardButton("تم الاشتراك ✅", callback_data="verify_subscription"))
     return markup
 
-# ✅ FIX 1: رسالة ترحيب واحدة تحتوي على الأزرار مباشرة (بدون رسالتين)
+# رسالة ترحيب واحدة تحتوي على الأزرار مباشرة
 def get_welcome_text(user_id):
     balance = USER_BALANCES.get(user_id, 0)
     return (
@@ -328,11 +328,11 @@ def youtube_inline_menu():
     markup.add(types.InlineKeyboardButton("🔙 رجوع للمنصات", callback_data="platforms_menu"))
     return markup
 
-# ✅ دالة مساعدة: ترسل رسالة ترحيب جديدة (تُستخدم فقط بعد /start وبعد العمليات)
+# دالة مساعدة لإرسال قائمة الترحيب
 def send_welcome(chat_id, user_id):
     bot.send_message(chat_id, get_welcome_text(user_id), reply_markup=main_inline_menu())
 
-# ✅ دالة مساعدة: تعدل الرسالة الحالية لترجع للترحيب (تُستخدم عند زر الرجوع)
+# دالة مساعدة لتعديل الواجهة الحالية والعودة للرئيسية
 def edit_to_welcome(chat_id, message_id, user_id):
     bot.edit_message_text(get_welcome_text(user_id), chat_id, message_id, reply_markup=main_inline_menu())
 
@@ -342,14 +342,14 @@ def start(message):
     user_id = message.from_user.id
     text_args = message.text.split()
 
-    # حذف الكيبورد القديم
+    # مسح لوحة المفاتيح القديمة لتنظيف الشات
     clean_msg = bot.send_message(message.chat.id, "جاري فتح لوحة التحكم...", reply_markup=types.ReplyKeyboardRemove())
     bot.delete_message(message.chat.id, clean_msg.message_id)
 
     if not check_is_subscribed(user_id):
         bot.send_message(
             message.chat.id,
-            f"⚠️ <b>عذراً عزيزي، يجب عليك الاشتراك في قناة البوت الرسمية لتتمكن من استخدامه!</b>\n\nاشترك في القناة: {CHANNEL_USERNAME} ثم اضغط على زر تفعيل الحساب بالأسفل 👇",
+            f"⚠️ <b>عذراً عزيزي، يجب عليك الاشتراك في قناة البوت الرسمية لتتمكن من استخدامه!</b>\n\nاشترك في القناة: {CHANNEL_USERNAME} ثم اضغط على زر تم الاشتراك بالأسفل 👇",
             reply_markup=force_sub_menu(),
             parse_mode="HTML"
         )
@@ -376,7 +376,6 @@ def start(message):
         except ValueError:
             pass
 
-    # ✅ رسالة واحدة فيها الترحيب + الأزرار
     send_welcome(message.chat.id, user_id)
 
 # --- شحن نقاط للمالك ---
@@ -411,12 +410,10 @@ def add_points_admin(message):
     'اكثر مشاركين رابط الإحالة', 'أكثر مشاركين رابط الاحالة', '/اكثر مشاركين'
 ])
 def top_referrals(message):
-    # احسب عدد المُحالين لكل مستخدم لحظياً
     if not REFERRED_USERS:
         bot.send_message(message.chat.id, "📊 لا يوجد مشاركين بعد.")
         return
 
-    # رتّب من الأعلى للأقل
     sorted_referrers = sorted(
         REFERRED_USERS.items(),
         key=lambda x: len(x[1]),
@@ -444,7 +441,6 @@ def handle_callbacks(call):
     chat_id = call.message.chat.id
     message_id = call.message.message_id
 
-    # التحقق من الاشتراك
     if call.data == "verify_subscription":
         if check_is_subscribed(user_id):
             bot.delete_message(chat_id, message_id)
@@ -466,11 +462,9 @@ def handle_callbacks(call):
     if user_id not in USER_BALANCES:
         USER_BALANCES[user_id] = 0
 
-    # ✅ زر الرجوع: يعدل الرسالة الحالية ويرجع للترحيب (بدون رسالة جديدة)
     if call.data == "back_to_main":
         edit_to_welcome(chat_id, message_id, user_id)
 
-    # ✅ قسم الخدمات: يعدل نفس الرسالة
     elif call.data == "main_services" or call.data == "platforms_menu":
         bot.edit_message_text(
             "🛒 اهلاً بك في قسم الخدمات\n• اختر المنصة التي تريدها 👇",
@@ -546,7 +540,6 @@ def handle_callbacks(call):
         markup.row(types.InlineKeyboardButton("🔙 رجوع لقسم التجميع", callback_data="collect_menu"))
         bot.edit_message_text(ref_text, chat_id, message_id, reply_markup=markup)
 
-    # ✅ FIX 2: إصلاح الهدية اليومية - النقاط ما تروح
     elif call.data == "daily_gift_system":
         current_time = time.time()
         last_claim = USER_DAILY_GIFT.get(user_id, 0)
@@ -562,7 +555,6 @@ def handle_callbacks(call):
             minutes = (remaining_time % 3600) // 60
             bot.answer_callback_query(call.id, f"❌ لقد استلمت هديتك اليومية!\nيرجى المحاولة بعد: {hours} ساعة و {minutes} دقيقة.", show_alert=True)
         
-        # ✅ بعد الهدية يرجع للترحيب بتعديل الرسالة نفسها
         edit_to_welcome(chat_id, message_id, user_id)
 
     # --- توجيه المنصات ---
@@ -621,7 +613,7 @@ def process_gift_code(message):
         send_welcome(message.chat.id, user_id)
         return
 
-    # أضف النقاط
+    # إضافة النقاط لحساب المستخدم
     points = code_data["points"]
     GIFT_CODES[code]["used_by"].append(user_id)
     USER_BALANCES[user_id] = USER_BALANCES.get(user_id, 0) + points
@@ -629,7 +621,7 @@ def process_gift_code(message):
 
     remaining = code_data["max_uses"] - len(GIFT_CODES[code]["used_by"])
     
-    # تم التصليح هنا باستخدام علامات الاقتباس الثلاثية لمنع الـ SyntaxError
+    # تم التصليح هنا باستخدام علامات الاقتباس الثلاثية لتفادي الـ SyntaxError القديم
     bot.send_message(message.chat.id, f"""✅ تم تفعيل الكود بنجاح!
 💎 حصلت على {points} نقطة!
 🔢 المتبقي من استخدامات الكود: {remaining}""")
@@ -690,7 +682,7 @@ def process_link(message, service_id):
     msg = bot.send_message(message.chat.id, "🔢 أرسل العدد المطلوب (مثال: 1000):")
     bot.register_next_step_handler(msg, process_quantity, service_id, link)
 
-# --- استلام العدد وإرسال الطلب ---
+# --- استلام العدد وإرسال الطلب للسيرفر ---
 def process_quantity(message, service_id, link):
     user_id = message.from_user.id
     quantity = message.text
