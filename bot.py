@@ -3,7 +3,6 @@ from telebot import types
 import requests
 import time
 import json
-import os as _os
 
 # 🌐 بيانات الـ API
 API_URL = "https://foloiq.com/api/v2"
@@ -14,113 +13,129 @@ CHANNEL_USERNAME = "@Sultan_Follow"
 
 # 📸 خدمات إنستغرام
 INSTAGRAM_SERVICES = {
-    "📸 | متابعين انستغرام | 1000 بـ 15,000 نقطة": {"id": 8023, "points": 15000},
-    "📸 | متابعين حقيقي | 1000 بـ 20,000 نقطة": {"id": 7296, "points": 20000},
-    "📸 | لايكات ضمان مدى الحياة | 1000 بـ 3,000 نقطة": {"id": 8712, "points": 3000},
-    "📸 | لايكات نقص قليل | 1000 بـ 2,500 نقطة": {"id": 8603, "points": 2500},
-    "📸 | لايكات عرب 30 يوم | 1000 بـ 8,000 نقطة": {"id": 8559, "points": 8000},
-    "📸 | مشاهدات بدون ضمان | 1000 بـ 500 نقطة": {"id": 8194, "points": 500},
-    "📸 | مشاهدات ضمان 30 يوم | 1000 بـ 750 نقطة": {"id": 7035, "points": 750},
-    "📸 | عرض مشاهدات انستغرام | 1000 بـ 240 نقطة": {"id": 5912, "points": 240},
-    "📸 | عرض مشاهدات ضمان 7 ايام | 1000 بـ 500 نقطة": {"id": 4219, "points": 500}
+"📸 | متابعين انستغرام | 1000 بـ 15,000 نقطة": {"id": 8023, "points": 15000},
+"📸 | متابعين حقيقي | 1000 بـ 20,000 نقطة": {"id": 7296, "points": 20000},
+"📸 | لايكات ضمان مدى الحياة | 1000 بـ 3,000 نقطة": {"id": 8712, "points": 3000},
+"📸 | لايكات نقص قليل | 1000 بـ 2,500 نقطة": {"id": 8603, "points": 2500},
+"📸 | لايكات عرب 30 يوم | 1000 بـ 8,000 نقطة": {"id": 8559, "points": 8000},
+"📸 | مشاهدات بدون ضمان | 1000 بـ 500 نقطة": {"id": 8194, "points": 500},
+"📸 | مشاهدات ضمان 30 يوم | 1000 بـ 750 نقطة": {"id": 7035, "points": 750},
+"📸 | عرض مشاهدات انستغرام | 1000 بـ 240 نقطة": {"id": 5912, "points": 240},
+"📸 | عرض مشاهدات ضمان 7 ايام | 1000 بـ 500 نقطة": {"id": 4219, "points": 500}
 }
 
 # 🎵 خدمات تيك توك
 TIKTOK_SERVICES = {
-    "🎵 | لايكات+مشاهدات ضمان شهر | 1000 بـ 4,000 نقطة": {"id": 8397, "points": 4000},
-    "🎵 | لايكات+مشاهدات 365 يوم | 1000 بـ 5,000 نقطة": {"id": 8401, "points": 5000},
-    "🎵 | لايكات ضمان شهر | 1000 بـ 6,000 نقطة": {"id": 8539, "points": 6000},
-    "🎵 | لايكات ضمان 7 ايام | 1000 بـ 9,000 نقطة": {"id": 8610, "points": 9000},
-    "🎵 | لايكات ضمان مدى الحياة | 1000 بـ 15,000 نقطة": {"id": 8541, "points": 15000},
-    "🎵 | مشاهدات ضمان 30 يوم | 1000 بـ 500 نقطة": {"id": 8845, "points": 500},
-    "🎵 | مشاهدات اعلان ممول | 1000 بـ 20,000 نقطة": {"id": 7285, "points": 20000},
-    "🎵 | مشاهدات ضمان 60 يوم | 1000 بـ 2,000 نقطة": {"id": 8706, "points": 2000},
-    "🎵 | مشاهدات بث | 1000 بـ 20,000 نقطة": {"id": 8735, "points": 20000},
-    "🎵 | مشاهدات بث عربي | 1000 بـ 30,000 نقطة": {"id": 8736, "points": 30000},
-    "🎵 | متابعين حقيقي 15 يوم | 1000 بـ 60,000 نقطة": {"id": 8103, "points": 60000},
-    "🎵 | متابعين حسابات مميزة | 1000 بـ 7963 نقطة": {"id": 7963, "points": 62000},
-    "🎵 | مشاركات بدون ضمان | 1000 بـ 15,000 نقطة": {"id": 8091, "points": 15000},
-    "🎵 | مشاركات ضمان | 1000 بـ 16,000 نقطة": {"id": 8092, "points": 16000},
-    "🎵 | حفظ بدون ضمان | 1000 بـ 500 نقطة": {"id": 8363, "points": 500},
-    "🎵 | حفظ ضمان مدى الحياة | 1000 بـ 5,000 نقطة": {"id": 8364, "points": 5000},
-    "🎵 | تعليقات عشوائية ضمان | 1000 بـ 35,000 نقطة": {"id": 8618, "points": 35000},
-    "🎵 | رشق سكور | 1000 بـ 19,000 نقطة": {"id": 7510, "points": 19000},
-    "🎵 | اعجابات ستوري | 1000 بـ 16,000 نقطة": {"id": 5419, "points": 16000}
+"🎵 | لايكات+مشاهدات ضمان شهر | 1000 بـ 4,000 نقطة": {"id": 8397, "points": 4000},
+"🎵 | لايكات+مشاهدات 365 يوم | 1000 بـ 5,000 نقطة": {"id": 8401, "points": 5000},
+"🎵 | لايكات ضمان شهر | 1000 بـ 6,000 نقطة": {"id": 8539, "points": 6000},
+"🎵 | لايكات ضمان 7 ايام | 1000 بـ 9,000 نقطة": {"id": 8610, "points": 9000},
+"🎵 | لايكات ضمان مدى الحياة | 1000 بـ 15,000 نقطة": {"id": 8541, "points": 15000},
+"🎵 | مشاهدات ضمان 30 يوم | 1000 بـ 500 نقطة": {"id": 8845, "points": 500},
+"🎵 | مشاهدات اعلان ممول | 1000 بـ 20,000 نقطة": {"id": 7285, "points": 20000},
+"🎵 | مشاهدات ضمان 60 يوم | 1000 بـ 2,000 نقطة": {"id": 8706, "points": 2000},
+"🎵 | مشاهدات بث | 1000 بـ 20,000 نقطة": {"id": 8735, "points": 20000},
+"🎵 | مشاهدات بث عربي | 1000 بـ 30,000 نقطة": {"id": 8736, "points": 30000},
+"🎵 | متابعين حقيقي 15 يوم | 1000 بـ 60,000 نقطة": {"id": 8103, "points": 60000},
+"🎵 | متابعين حسابات مميزة | 1000 بـ 7963 نقطة": {"id": 7963, "points": 62000},
+"🎵 | مشاركات بدون ضمان | 1000 بـ 15,000 نقطة": {"id": 8091, "points": 15000},
+"🎵 | مشاركات ضمان | 1000 بـ 16,000 نقطة": {"id": 8092, "points": 16000},
+"🎵 | حفظ بدون ضمان | 1000 بـ 500 نقطة": {"id": 8363, "points": 500},
+"🎵 | حفظ ضمان مدى الحياة | 1000 بـ 5,000 نقطة": {"id": 8364, "points": 5000},
+"🎵 | تعليقات عشوائية ضمان | 1000 بـ 35,000 نقطة": {"id": 8618, "points": 35000},
+"🎵 | رشق سكور | 1000 بـ 19,000 نقطة": {"id": 7510, "points": 19000},
+"🎵 | اعجابات ستوري | 1000 بـ 16,000 نقطة": {"id": 5419, "points": 16000}
 }
 
 # ✈️ خدمات تلجرام
 TELEGRAM_SERVICES = {
-    "✈️ | مشتركون بوت ضمان 30 يوم | 1000 بـ 8,000 نقطة": {"id": 8511, "points": 8000},
-    "✈️ | مشتركون بوت 365 يوم | 1000 بـ 9,000 نقطة": {"id": 8515, "points": 9000},
-    "✈️ | اعضاء قناة مدى الحياة | 1000 بـ 8,500 نقطة": {"id": 8516, "points": 8500},
-    "✈️ | اعضاء مميزون 60 يوم | 1000 بـ 25,000 نقطة": {"id": 6625, "points": 25000},
-    "✈️ | اعضاء كروب | 1000 بـ 14,000 نقطة": {"id": 6156, "points": 14000},
-    "✈️ | مشاهدات منشور | 1000 بـ 500 نقطة": {"id": 4608, "points": 500},
-    "✈️ | مشاهدات 10 منشورات | 1000 بـ 2,000 نقطة": {"id": 4610, "points": 2000},
-    "✈️ | مشاهدة ستوري | 1000 بـ 7,000 نقطة": {"id": 5221, "points": 7000},
-    "✈️ | مشاهدات مستقبلية | 1000 بـ 5,000 نقطة": {"id": 7670, "points": 5000},
-    "✈️ | تصويت مسابقات | 1000 بـ 8,000 نقطة": {"id": 7386, "points": 8000}
+"✈️ | مشتركون بوت ضمان 30 يوم | 1000 بـ 8,000 نقطة": {"id": 8511, "points": 8000},
+"✈️ | مشتركون بوت 365 يوم | 1000 بـ 9,000 نقطة": {"id": 8515, "points": 9000},
+"✈️ | اعضاء قناة مدى الحياة | 1000 بـ 8,500 نقطة": {"id": 8516, "points": 8500},
+"✈️ | اعضاء مميزون 60 يوم | 1000 بـ 25,000 نقطة": {"id": 6625, "points": 25000},
+"✈️ | اعضاء كروب | 1000 بـ 14,000 نقطة": {"id": 6156, "points": 14000},
+"✈️ | مشاهدات منشور | 1000 بـ 500 نقطة": {"id": 4608, "points": 500},
+"✈️ | مشاهدات 10 منشورات | 1000 بـ 2,000 نقطة": {"id": 4610, "points": 2000},
+"✈️ | مشاهدة ستوري | 1000 بـ 7,000 نقطة": {"id": 5221, "points": 7000},
+"✈️ | مشاهدات مستقبلية | 1000 بـ 5,000 نقطة": {"id": 7670, "points": 5000},
+"✈️ | تصويت مسابقات | 1000 بـ 8,000 نقطة": {"id": 7386, "points": 8000}
 }
 
 # 📘 خدمات فيس بوك
 FACEBOOK_SERVICES = {
-    "📘 | متابعين حساب شخصي حقيقي ضمان شهر | 1000 بـ 4,000 نقطة": {"id": 8642, "points": 4000},
-    "📘 | متابعين حساب شخصي ضمان سنة | 1000 بـ 5,000 نقطة": {"id": 8861, "points": 5000},
-    "📘 | مشتركين البيج + متابعين البيج | 1000 بـ 14,000 نقطة": {"id": 5808, "points": 14000},
-    "📘 | اعضاء مجموعة ضمان شهر | 1000 بـ 4,000 نقطة": {"id": 8724, "points": 4000},
-    "📘 | طلبات صداقة | 1000 بـ 25,000 نقطة": {"id": 8767, "points": 25000},
-    "📘 | مشاهدات الفيديو | 1000 بـ 30,000 نقطة": {"id": 5013, "points": 30000}
+"📘 | متابعين حساب شخصي حقيقي ضمان شهر | 1000 بـ 4,000 نقطة": {"id": 8642, "points": 4000},
+"📘 | متابعين حساب شخصي ضمان سنة | 1000 بـ 5,000 نقطة": {"id": 8861, "points": 5000},
+"📘 | مشتركين البيج + متابعين البيج | 1000 بـ 14,000 نقطة": {"id": 5808, "points": 14000},
+"📘 | اعضاء مجموعة ضمان شهر | 1000 بـ 4,000 نقطة": {"id": 8724, "points": 4000},
+"📘 | طلبات صداقة | 1000 بـ 25,000 نقطة": {"id": 8767, "points": 25000},
+"📘 | مشاهدات الفيديو | 1000 بـ 30,000 نقطة": {"id": 5013, "points": 30000}
 }
 
 # ✖️ خدمات تويتر
 TWITTER_SERVICES = {
-    "✖️ | متابعين ضمان شهر | 1000 بـ 40,000 نقطة": {"id": 8848, "points": 40000},
-    "✖️ | متابعين بوت بدون ضمان | 1000 بـ 17,000 نقطة": {"id": 8543, "points": 17000},
-    "✖️ | مشاهدات فيديو جودة عالية | 1000 بـ 500 نقطة": {"id": 8241, "points": 500},
-    "✖️ | لايكات ضمان 7 يوم | 1000 بـ 30,000 نقطة": {"id": 8763, "points": 30000}
+"✖️ | متابعين ضمان شهر | 1000 بـ 40,000 نقطة": {"id": 8848, "points": 40000},
+"✖️ | متابعين بوت بدون ضمان | 1000 بـ 17,000 نقطة": {"id": 8543, "points": 17000},
+"✖️ | مشاهدات فيديو جودة عالية | 1000 بـ 500 نقطة": {"id": 8241, "points": 500},
+"✖️ | لايكات ضمان 7 يوم | 1000 بـ 30,000 نقطة": {"id": 8763, "points": 30000}
 }
 
 # 🧵 خدمات ثريدز
 THREADS_SERVICES = {
-    "🧵 | متابعين ضمان | 1000 بـ 55,000 نقطة": {"id": 3559, "points": 55000},
-    "🧵 | لايكات ضمان | 1000 بـ 160,000 نقطة": {"id": 3564, "points": 160000}
+"🧵 | متابعين ضمان | 1000 بـ 55,000 نقطة": {"id": 3559, "points": 55000},
+"🧵 | لايكات ضمان | 1000 بـ 160,000 نقطة": {"id": 3564, "points": 160000}
 }
 
 # 🎧 خدمات سبوتي فاي
 SPOTIFY_SERVICES = {
-    "🎧 | متابعين حقيقي ضمان مدى الحياة | 1000 بـ 17,000 نقطة": {"id": 8662, "points": 17000},
-    "🎧 | مشاهدات مضمونة | 1000 بـ 13,000 نقطة": {"id": 8660, "points": 13000},
-    "🎧 | حفظ جودة مضمونة | 1000 بـ 16,000 نقطة": {"id": 8661, "points": 16000}
+"🎧 | متابعين حقيقي ضمان مدى الحياة | 1000 بـ 17,000 نقطة": {"id": 8662, "points": 17000},
+"🎧 | مشاهدات مضمونة | 1000 بـ 13,000 نقطة": {"id": 8660, "points": 13000},
+"🎧 | حفظ جودة مضمونة | 1000 بـ 16,000 نقطة": {"id": 8661, "points": 16000}
 }
 
 # 🟢 خدمات كيك
 KICK_SERVICES = {
-    "🟢 | مشاهدات بث فوري | 1000 بـ 2,000 نقطة": {"id": 5461, "points": 2000},
-    "🟢 | مشاهدات فوري ضمان 150 دقيقة | 1000 بـ 20,000 نقطة": {"id": 5466, "points": 20000}
+"🟢 | مشاهدات بث فوري | 1000 بـ 2,000 نقطة": {"id": 5461, "points": 2000},
+"🟢 | مشاهدات فوري ضمان 150 دقيقة | 1000 بـ 20,000 نقطة": {"id": 5466, "points": 20000}
 }
 
 # 🔴 خدمات يوتيوب
 YOUTUBE_SERVICES = {
-    "🔴 | اشتراك بريميوم مدى الحياة | 1000 بـ 20,000 نقطة": {"id": 8373, "points": 20000},
-    "🔴 | مشتركين يوتيوب حقيقي ضمان مدى الحياة | 1000 بـ 18,000 نقطة": {"id": 8750, "points": 18000},
-    "🔴 | مشاهدات حقيقية ضمان مدى الحياة | 1000 بـ 16,000 نقطة": {"id": 8855, "points": 16000},
-    "🔴 | لايكات + تعليقات ضمان 90 يوم | 1000 بـ 6,000 نقطة": {"id": 6163, "points": 6000},
-    "🔴 | لايكات ضمان 100 يوم | 1000 بـ 8,000 نقطة": {"id": 6995, "points": 8000},
-    "🔴 | مشاهدات بث | 1000 بـ 2,000 نقطة": {"id": 6058, "points": 2000},
-    "🔴 | مشاهدات يوتيوب تحقيق الارباح | 1000 بـ 105,000 نقطة": {"id": 7373, "points": 105000}
+"🔴 | اشتراك بريميوم مدى الحياة | 1000 بـ 20,000 نقطة": {"id": 8373, "points": 20000},
+"🔴 | مشتركين يوتيوب حقيقي ضمان مدى الحياة | 1000 بـ 18,000 نقطة": {"id": 8750, "points": 18000},
+"🔴 | مشاهدات حقيقية ضمان مدى الحياة | 1000 بـ 16,000 نقطة": {"id": 8855, "points": 16000},
+"🔴 | لايكات + تعليقات ضمان 90 يوم | 1000 بـ 6,000 نقطة": {"id": 6163, "points": 6000},
+"🔴 | لايكات ضمان 100 يوم | 1000 بـ 8,000 نقطة": {"id": 6995, "points": 8000},
+"🔴 | مشاهدات بث | 1000 بـ 2,000 نقطة": {"id": 6058, "points": 2000},
+"🔴 | مشاهدات يوتيوب تحقيق الارباح | 1000 بـ 105,000 نقطة": {"id": 7373, "points": 105000}
 }
 
 ALL_SERVICES = {
-    **INSTAGRAM_SERVICES, **TIKTOK_SERVICES, **TELEGRAM_SERVICES,
-    **FACEBOOK_SERVICES, **TWITTER_SERVICES, **THREADS_SERVICES,
-    **SPOTIFY_SERVICES, **KICK_SERVICES, **YOUTUBE_SERVICES
+**INSTAGRAM_SERVICES, **TIKTOK_SERVICES, **TELEGRAM_SERVICES,
+**FACEBOOK_SERVICES, **TWITTER_SERVICES, **THREADS_SERVICES,
+**SPOTIFY_SERVICES, **KICK_SERVICES, **YOUTUBE_SERVICES
 }
 SERVICES_BY_ID = {data["id"]: {"name": name, "points": data["points"]} for name, data in ALL_SERVICES.items()}
 
 # 💾 ملف حفظ البيانات
+import os as _os
 DATA_FILE = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "bot_data.json")
 
-def load_data():
+def # 🎟️ أكواد النقاط - كل كود يشتغل لـ 5 أشخاص فقط
+GIFT_CODES = {
+    "p.m": {"points": 5000, "max_uses": 5, "used_by": []},
+    "pl0": {"points": 5000, "max_uses": 5, "used_by": []},
+    "pl9": {"points": 5000, "max_uses": 5, "used_by": []},
+    "pmw": {"points": 5000, "max_uses": 5, "used_by": []},
+    "poi": {"points": 5000, "max_uses": 5, "used_by": []},
+    "yuo": {"points": 5000, "max_uses": 5, "used_by": []},
+    "lki": {"points": 5000, "max_uses": 5, "used_by": []},
+    "red": {"points": 5000, "max_uses": 5, "used_by": []},
+    "bnj": {"points": 5000, "max_uses": 5, "used_by": []},
+    "uhb": {"points": 5000, "max_uses": 5, "used_by": []},
+    "fgj": {"points": 5000, "max_uses": 5, "used_by": []},
+}
+
+load_data():
     global USER_BALANCES, USER_DAILY_GIFT, REFERRAL_USED, REFERRED_USERS
     try:
         with open(DATA_FILE, "r", encoding="utf-8") as f:
@@ -140,7 +155,8 @@ def save_data():
         "balances":       {str(k): v for k, v in USER_BALANCES.items()},
         "daily_gift":     {str(k): v for k, v in USER_DAILY_GIFT.items()},
         "referral_used":  {str(k): str(v) for k, v in REFERRAL_USED.items()},
-        "referred_users": {str(k): list(v) for k, v in REFERRED_USERS.items()}
+        "referred_users": {str(k): list(v) for k, v in REFERRED_USERS.items()},
+        "gift_codes":     {k: {"points": v["points"], "max_uses": v["max_uses"], "used_by": v["used_by"]} for k, v in GIFT_CODES.items()}
     }
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -150,10 +166,25 @@ USER_BALANCES   = {}
 USER_DAILY_GIFT = {}
 REFERRAL_USED   = {}
 REFERRED_USERS  = {}
+# 🎟️ أكواد النقاط - كل كود يشتغل لـ 5 أشخاص فقط
+GIFT_CODES = {
+    "p.m": {"points": 5000, "max_uses": 5, "used_by": []},
+    "pl0": {"points": 5000, "max_uses": 5, "used_by": []},
+    "pl9": {"points": 5000, "max_uses": 5, "used_by": []},
+    "pmw": {"points": 5000, "max_uses": 5, "used_by": []},
+    "poi": {"points": 5000, "max_uses": 5, "used_by": []},
+    "yuo": {"points": 5000, "max_uses": 5, "used_by": []},
+    "lki": {"points": 5000, "max_uses": 5, "used_by": []},
+    "red": {"points": 5000, "max_uses": 5, "used_by": []},
+    "bnj": {"points": 5000, "max_uses": 5, "used_by": []},
+    "uhb": {"points": 5000, "max_uses": 5, "used_by": []},
+    "fgj": {"points": 5000, "max_uses": 5, "used_by": []},
+}
+
 load_data()
 
 BOT_TOKEN = "8804286947:AAEydiGWGxA7ylGtCs7K5BmDImPfUI9dmww"
-bot = telebot.TeleBot(BOT_TOKEN)
+bot = telebot.TeleBot(BOT_TOKEN, threaded=False)
 
 # --- فحص الاشتراك ---
 def check_is_subscribed(user_id):
@@ -170,7 +201,7 @@ def force_sub_menu():
     markup.row(types.InlineKeyboardButton("تم الاشتراك ✅", callback_data="verify_subscription"))
     return markup
 
-# رسالة ترحيب واحدة تحتوي على الأزرار مباشرة
+# ✅ FIX 1: رسالة ترحيب واحدة تحتوي على الأزرار مباشرة (بدون رسالتين)
 def get_welcome_text(user_id):
     balance = USER_BALANCES.get(user_id, 0)
     return (
@@ -188,7 +219,7 @@ def main_inline_menu():
     markup.row(types.InlineKeyboardButton("🎯 تمويل قناتك", callback_data="btn_under_dev"))
     markup.row(
         types.InlineKeyboardButton("💎 تجمع نقاط", callback_data="collect_menu"),
-        types.InlineKeyboardButton("💳 استخدام كود", callback_data="btn_under_dev")
+        types.InlineKeyboardButton("💳 استخدام كود", callback_data="use_code_menu")
     )
     markup.row(
         types.InlineKeyboardButton("📅 طلباتي", callback_data="btn_under_dev"),
@@ -296,9 +327,11 @@ def youtube_inline_menu():
     markup.add(types.InlineKeyboardButton("🔙 رجوع للمنصات", callback_data="platforms_menu"))
     return markup
 
+# ✅ دالة مساعدة: ترسل رسالة ترحيب جديدة (تُستخدم فقط بعد /start وبعد العمليات)
 def send_welcome(chat_id, user_id):
     bot.send_message(chat_id, get_welcome_text(user_id), reply_markup=main_inline_menu())
 
+# ✅ دالة مساعدة: تعدل الرسالة الحالية لترجع للترحيب (تُستخدم عند زر الرجوع)
 def edit_to_welcome(chat_id, message_id, user_id):
     bot.edit_message_text(get_welcome_text(user_id), chat_id, message_id, reply_markup=main_inline_menu())
 
@@ -308,6 +341,7 @@ def start(message):
     user_id = message.from_user.id
     text_args = message.text.split()
 
+    # حذف الكيبورد القديم
     clean_msg = bot.send_message(message.chat.id, "جاري فتح لوحة التحكم...", reply_markup=types.ReplyKeyboardRemove())
     bot.delete_message(message.chat.id, clean_msg.message_id)
 
@@ -341,6 +375,7 @@ def start(message):
         except ValueError:
             pass
 
+    # ✅ رسالة واحدة فيها الترحيب + الأزرار
     send_welcome(message.chat.id, user_id)
 
 # --- شحن نقاط للمالك ---
@@ -375,10 +410,12 @@ def add_points_admin(message):
     'اكثر مشاركين رابط الإحالة', 'أكثر مشاركين رابط الاحالة', '/اكثر مشاركين'
 ])
 def top_referrals(message):
+    # احسب عدد المُحالين لكل مستخدم لحظياً
     if not REFERRED_USERS:
         bot.send_message(message.chat.id, "📊 لا يوجد مشاركين بعد.")
         return
 
+    # رتّب من الأعلى للأقل
     sorted_referrers = sorted(
         REFERRED_USERS.items(),
         key=lambda x: len(x[1]),
@@ -406,6 +443,7 @@ def handle_callbacks(call):
     chat_id = call.message.chat.id
     message_id = call.message.message_id
 
+    # التحقق من الاشتراك
     if call.data == "verify_subscription":
         if check_is_subscribed(user_id):
             bot.delete_message(chat_id, message_id)
@@ -427,9 +465,11 @@ def handle_callbacks(call):
     if user_id not in USER_BALANCES:
         USER_BALANCES[user_id] = 0
 
+    # ✅ زر الرجوع: يعدل الرسالة الحالية ويرجع للترحيب (بدون رسالة جديدة)
     if call.data == "back_to_main":
         edit_to_welcome(chat_id, message_id, user_id)
 
+    # ✅ قسم الخدمات: يعدل نفس الرسالة
     elif call.data == "main_services" or call.data == "platforms_menu":
         bot.edit_message_text(
             "🛒 اهلاً بك في قسم الخدمات\n• اختر المنصة التي تريدها 👇",
@@ -441,6 +481,11 @@ def handle_callbacks(call):
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("🔙 رجوع للقائمة الرئيسية", callback_data="back_to_main"))
         bot.edit_message_text(account_text, chat_id, message_id, reply_markup=markup)
+
+    elif call.data == "use_code_menu":
+        bot.delete_message(chat_id, message_id)
+        msg = bot.send_message(chat_id, "💳 أرسل الكود الذي تريد استخدامه:")
+        bot.register_next_step_handler(msg, process_gift_code)
 
     elif call.data == "btn_under_dev":
         bot.answer_callback_query(call.id, "⚙️ هذا القسم قيد التحديث حالياً.", show_alert=True)
@@ -482,7 +527,7 @@ def handle_callbacks(call):
             "• اختر الطريقة المناسبة لك لتجميع النقاط من الأسفل 👇"
         )
         markup = types.InlineKeyboardMarkup()
-        markup.row(types.InlineKeyboardButton("🔗 مشاركة رابط الإحالة (+200 نقطة)", callback_data="referral_system"))
+        markup.row(types.InlineKeyboardButton("🔗 مشاركة رابط الإحالة (+1000 نقطة)", callback_data="referral_system"))
         markup.row(types.InlineKeyboardButton("🎁 الهدية اليومية المجانية", callback_data="daily_gift_system"))
         markup.row(types.InlineKeyboardButton("🔙 رجوع للقائمة الرئيسية", callback_data="back_to_main"))
         bot.edit_message_text(collect_text, chat_id, message_id, reply_markup=markup)
@@ -494,12 +539,13 @@ def handle_callbacks(call):
             f"🔗 | رابط الإحالة الخاص بك:\n\n"
             f"{ref_link}\n\n"
             f"• انسخ الرابط وقم بمشاركته مع أصدقائك وفي المجموعات.\n"
-            f"• كل شخص يدخل للبوت عبر رابطك لأول مرة، ستحصل تلقائياً على 200 نقطة! 🎉"
+            f"• كل شخص يدخل للبوت عبر رابطك لأول مرة، ستحصل تلقائياً على 1000 نقطة! 🎉"
         )
         markup = types.InlineKeyboardMarkup()
         markup.row(types.InlineKeyboardButton("🔙 رجوع لقسم التجميع", callback_data="collect_menu"))
         bot.edit_message_text(ref_text, chat_id, message_id, reply_markup=markup)
 
+    # ✅ FIX 2: إصلاح الهدية اليومية - النقاط ما تروح
     elif call.data == "daily_gift_system":
         current_time = time.time()
         last_claim = USER_DAILY_GIFT.get(user_id, 0)
@@ -515,8 +561,10 @@ def handle_callbacks(call):
             minutes = (remaining_time % 3600) // 60
             bot.answer_callback_query(call.id, f"❌ لقد استلمت هديتك اليومية!\nيرجى المحاولة بعد: {hours} ساعة و {minutes} دقيقة.", show_alert=True)
         
+        # ✅ بعد الهدية يرجع للترحيب بتعديل الرسالة نفسها
         edit_to_welcome(chat_id, message_id, user_id)
 
+    # --- توجيه المنصات ---
     elif call.data == "insta_menu":
         bot.edit_message_text("📸 قسم : انستغرام\n| اختر الخدمة المطلوبة :", chat_id, message_id, reply_markup=instagram_inline_menu())
     elif call.data == "tiktok_menu":
@@ -544,6 +592,43 @@ def handle_callbacks(call):
             bot.delete_message(chat_id, message_id)
             msg = bot.send_message(chat_id, f"🔗 أرسل الرابط المطلوب لخدمة:\n[{service_name}]:")
             bot.register_next_step_handler(msg, process_link, service_id)
+
+# --- معالجة الكود ---
+def process_gift_code(message):
+    user_id = message.from_user.id
+    code = message.text.strip()
+
+    if code.startswith("/"):
+        bot.send_message(message.chat.id, "تم إلغاء العملية.")
+        send_welcome(message.chat.id, user_id)
+        return
+
+    if code not in GIFT_CODES:
+        bot.send_message(message.chat.id, "❌ الكود غير صحيح أو غير موجود!")
+        send_welcome(message.chat.id, user_id)
+        return
+
+    code_data = GIFT_CODES[code]
+
+    if user_id in code_data["used_by"]:
+        bot.send_message(message.chat.id, "❌ لقد استخدمت هذا الكود مسبقاً!")
+        send_welcome(message.chat.id, user_id)
+        return
+
+    if len(code_data["used_by"]) >= code_data["max_uses"]:
+        bot.send_message(message.chat.id, "❌ انتهت استخدامات هذا الكود!")
+        send_welcome(message.chat.id, user_id)
+        return
+
+    # أضف النقاط
+    points = code_data["points"]
+    GIFT_CODES[code]["used_by"].append(user_id)
+    USER_BALANCES[user_id] = USER_BALANCES.get(user_id, 0) + points
+    save_data()
+
+    remaining = code_data["max_uses"] - len(GIFT_CODES[code]["used_by"])
+    bot.send_message(message.chat.id, f"✅ تم تفعيل الكود بنجاح!\n💎 حصلت على {points} نقطة!\n🔢 المتبقي من استخدامات الكود: {remaining}")
+    send_welcome(message.chat.id, user_id)
 
 # --- فحص الطلب ---
 def process_check_order(message):
@@ -641,5 +726,12 @@ def process_quantity(message, service_id, link):
 
     send_welcome(message.chat.id, user_id)
 
+import time as _time
 print("البوت يعمل الآن...")
-bot.polling(none_stop=True)
+while True:
+    try:
+        bot.polling(none_stop=True, timeout=60, long_polling_timeout=60)
+    except Exception as e:
+        print(f"خطأ في الاتصال: {e}")
+        print("إعادة المحاولة بعد 5 ثواني...")
+        _time.sleep(5)
