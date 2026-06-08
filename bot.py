@@ -135,7 +135,7 @@ GIFT_CODES = {
     "fgj": {"points": 5000, "max_uses": 5, "used_by": []},
 }
 
-# تم تصليح الدالة هنا عبر إضافة كلمة def التعريفية
+# [مُصلح] تم إضافة def لتعريف الدالة بشكل برامجي صحيح
 def load_data():
     global USER_BALANCES, USER_DAILY_GIFT, REFERRAL_USED, REFERRED_USERS
     try:
@@ -621,7 +621,7 @@ def process_gift_code(message):
 
     remaining = code_data["max_uses"] - len(GIFT_CODES[code]["used_by"])
     
-    # تم التصليح هنا باستخدام علامات الاقتباس الثلاثية لتفادي الـ SyntaxError القديم
+    # [مُصلح] تم استخدام علامات الاقتباس الثلاثية لمنع الـ SyntaxError القديم
     bot.send_message(message.chat.id, f"""✅ تم تفعيل الكود بنجاح!
 💎 حصلت على {points} نقطة!
 🔢 المتبقي من استخدامات الكود: {remaining}""")
